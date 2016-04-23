@@ -265,8 +265,11 @@ int main(int argc, char * argv[] ) {
 
 	gostHash(&hash, test_text4, 178);
 
-	for (size_t i = 0; i < 32; i++) 
-		printf("%x", hash.result[i]);
+	for (size_t i = 0; i < 32; i++) {
+		char l = (hash.result[i] & 0xf0) >> 4;
+		char r = hash.result[i] & 0x0f;
+			printf("%x%x",l,r);
+	}
 	printf("\n");
 
 	return 0;

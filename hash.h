@@ -10,13 +10,21 @@ unsigned int gost_sbox_3[256];
 unsigned int gost_sbox_4[256];
 
 
+// #define GOST_ENCRYPT_ROUND(k1, k2) \
+// t = (k1) + r; \
+// l ^= gost_sbox_1[t & 0xff] ^ gost_sbox_2[(t >> 8) & 0xff] ^ \
+// gost_sbox_3[(t >> 16) & 0xff] ^ gost_sbox_4[t >> 24]; \
+// t = (k2) + l; \
+// r ^= gost_sbox_1[t & 0xff] ^ gost_sbox_2[(t >> 8) & 0xff] ^ \
+// gost_sbox_3[(t >> 16) & 0xff] ^ gost_sbox_4[t >> 24]; \
+
 #define GOST_ENCRYPT_ROUND(k1, k2) \
 t = (k1) + r; \
-l ^= gost_sbox_1[t & 0xff] ^ gost_sbox_2[(t >> 8) & 0xff] ^ \
-gost_sbox_3[(t >> 16) & 0xff] ^ gost_sbox_4[t >> 24]; \
+l ^= gost_sbox_1[t >> 24] ^ gost_sbox_2[(t >> 16) & 0xff] ^ \
+gost_sbox_3[(t >> 8) & 0xff] ^ gost_sbox_4[t & 0xff]; \
 t = (k2) + l; \
-r ^= gost_sbox_1[t & 0xff] ^ gost_sbox_2[(t >> 8) & 0xff] ^ \
-gost_sbox_3[(t >> 16) & 0xff] ^ gost_sbox_4[t >> 24]; \
+r ^= gost_sbox_1[t >> 24] ^ gost_sbox_2[(t >> 16) & 0xff] ^ \
+gost_sbox_3[(t >> 8) & 0xff] ^ gost_sbox_4[t & 0xff]; \
 
 #define GOST_ENCRYPT(key) \
 GOST_ENCRYPT_ROUND(key[0], key[1]) \
