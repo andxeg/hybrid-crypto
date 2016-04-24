@@ -4,27 +4,38 @@
 #include <stdlib.h>
 #include <string.h>
 
-unsigned int gost_sbox_1[256];
-unsigned int gost_sbox_2[256];
-unsigned int gost_sbox_3[256];
-unsigned int gost_sbox_4[256];
-
-
-// #define GOST_ENCRYPT_ROUND(k1, k2) \
-// t = (k1) + r; \
-// l ^= gost_sbox_1[t & 0xff] ^ gost_sbox_2[(t >> 8) & 0xff] ^ \
-// gost_sbox_3[(t >> 16) & 0xff] ^ gost_sbox_4[t >> 24]; \
-// t = (k2) + l; \
-// r ^= gost_sbox_1[t & 0xff] ^ gost_sbox_2[(t >> 8) & 0xff] ^ \
-// gost_sbox_3[(t >> 16) & 0xff] ^ gost_sbox_4[t >> 24]; \
+unsigned int sbox[8][16] = 
+{
+	{  4, 10,  9,  2, 13,  8,  0, 14,  6, 11,  1, 12,  7, 15,  5,  3 },
+	{ 14, 11,  4, 12,  6, 13, 15, 10,  2,  3,  8,  1,  0,  7,  5,  9 },
+	{  5,  8,  1, 13, 10,  3,  4,  2, 14, 15, 12,  7,  6,  0,  9, 11 },
+	{  7, 13, 10,  1,  0,  8,  9, 15, 14,  4,  6, 12, 11,  2,  5,  3 },
+	{  6, 12,  7,  1,  5, 15, 13,  8,  4, 10,  9, 14,  0,  3, 11,  2 },
+	{  4, 11, 10,  0,  7,  2,  1, 13,  3,  6,  8,  5,  9, 12, 15, 14 },
+	{ 13, 11,  4,  1,  3, 15,  5,  9,  0, 10, 14,  7,  6,  8,  2, 12 },
+	{  1, 15, 13,  0,  5,  7, 10,  4,  9,  2,  3, 14,  6, 11,  8, 12 }  
+};
 
 #define GOST_ENCRYPT_ROUND(k1, k2) \
 t = (k1) + r; \
-l ^= gost_sbox_1[t >> 24] ^ gost_sbox_2[(t >> 16) & 0xff] ^ \
-gost_sbox_3[(t >> 8) & 0xff] ^ gost_sbox_4[t & 0xff]; \
+l ^= (sbox[0][(t & 0xf0000000) >> 28] << 28) | \
+	(sbox[1][(t & 0x0f000000) >> 24] << 24) | \
+	(sbox[2][(t & 0x00f00000) >> 20] << 20) | \
+	(sbox[3][(t & 0x000f0000) >> 16] << 16) | \
+	(sbox[4][(t & 0x0000f000) >> 12] << 12) | \
+	(sbox[5][(t & 0x00000f00) >> 8] << 8) | \
+	(sbox[6][(t & 0x000000f0) >> 4] << 4) | \
+	(sbox[7][(t & 0x0000000f)]); \
 t = (k2) + l; \
-r ^= gost_sbox_1[t >> 24] ^ gost_sbox_2[(t >> 16) & 0xff] ^ \
-gost_sbox_3[(t >> 8) & 0xff] ^ gost_sbox_4[t & 0xff]; \
+r ^= (sbox[0][(t & 0xf0000000) >> 28] << 28) | \
+	(sbox[1][(t & 0x0f000000) >> 24] << 24) | \
+	(sbox[2][(t & 0x00f00000) >> 20] << 20) | \
+	(sbox[3][(t & 0x000f0000) >> 16] << 16) | \
+	(sbox[4][(t & 0x0000f000) >> 12] << 12) | \
+	(sbox[5][(t & 0x00000f00) >> 8] << 8) | \
+	(sbox[6][(t & 0x000000f0) >> 4] << 4) | \
+	(sbox[7][(t & 0x0000000f)]); \
+
 
 #define GOST_ENCRYPT(key) \
 GOST_ENCRYPT_ROUND(key[0], key[1]) \
@@ -45,7 +56,7 @@ GOST_ENCRYPT_ROUND(key[3], key[2]) \
 GOST_ENCRYPT_ROUND(key[1], key[0]) \
 t = r; \
 r = l; \
-l = t;
+l = t; \
 
 
 typedef struct {
@@ -64,43 +75,6 @@ void initHash(HASH * hash){
 	memset(hash->hash, 0, 32);
 	memset(hash->message_block, 0, 32);
 	hash->message_block_size = 0;
-
-	//
-
-	int a, b, i;
-	unsigned int ax, bx, cx, dx;
-
-	/* 4-bit S-Boxes */ 
-
-	unsigned int sbox[8][16] =
-	{
-		{  4, 10,  9,  2, 13,  8,  0, 14,  6, 11,  1, 12,  7, 15,  5,  3 },
-		{ 14, 11,  4, 12,  6, 13, 15, 10,  2,  3,  8,  1,  0,  7,  5,  9 },
-		{  5,  8,  1, 13, 10,  3,  4,  2, 14, 15, 12,  7,  6,  0,  9, 11 },
-		{  7, 13, 10,  1,  0,  8,  9, 15, 14,  4,  6, 12, 11,  2,  5,  3 },
-		{  6, 12,  7,  1,  5, 15, 13,  8,  4, 10,  9, 14,  0,  3, 11,  2 },
-		{  4, 11, 10,  0,  7,  2,  1, 13,  3,  6,  8,  5,  9, 12, 15, 14 },
-		{ 13, 11,  4,  1,  3, 15,  5,  9,  0, 10, 14,  7,  6,  8,  2, 12 },
-		{  1, 15, 13,  0,  5,  7, 10,  4,  9,  2,  3, 14,  6, 11,  8, 12 }  
-	};
-
-	/* s-box precomputation */
-
-	i = 0;
-	for (a = 0; a < 16; a++) {
-		ax = sbox[1][a] << 15;	  
-		bx = sbox[3][a] << 23;
-		cx = sbox[5][a];	      
-		cx = (cx >> 1) | (cx << 31);
-		dx = sbox[7][a] << 7;
-
-		for (b = 0; b < 16; b++) {
-			gost_sbox_1[i] = ax | (sbox[0][b] << 11);		  
-			gost_sbox_2[i] = bx | (sbox[2][b] << 19);
-			gost_sbox_3[i] = cx | (sbox[4][b] << 27);	  
-			gost_sbox_4[i++] = dx | (sbox[6][b] << 3);
-		}
-	}
 }
 
 
@@ -140,7 +114,7 @@ void compressionFunction(unsigned int * h, unsigned int * m) {
 		w[6] = u[6] ^ v [6];
 		w[7] = u[7] ^ v [7];
 
-		//P-function. See fi-function in the beginning of the file
+		//P-function.
 		key[0] = w[0] & 0xff000000 | ((w[2] & 0xff000000) >> 8) | 
 		((w[4] & 0xff000000) >> 16) | ((w[6] & 0xff000000) >> 24); // fi(32) = 32 fi(31) = 24 fi(30) = 16 fi(29) = 8
 		
@@ -167,6 +141,8 @@ void compressionFunction(unsigned int * h, unsigned int * m) {
 
 		r = h[i+1];
 		l = h[i];
+
+		//GOST-28147-89 encryption
 		GOST_ENCRYPT(key);		
 
 
@@ -249,7 +225,7 @@ void compressionFunction(unsigned int * h, unsigned int * m) {
 	h[6] = u[6];
 	h[7] = u[7];
 
-	printf("\n--------IN compression function-------\n");
+	printf("--------IN compression function-------\n");
 	for (size_t k = 0; k < 8; k++) {
 		printf("%x", h[k]);
 	}
@@ -293,7 +269,7 @@ void gostHashIteration(HASH * hash, const unsigned char * message_block, size_t 
 
 	//Compress
 	compressionFunction(hash->hash, m);
-	printf("END gostHashIteration\n");
+	printf("END gostHashIteration\n\n");
 }
 
 void lastIteration(HASH * hash);
@@ -332,7 +308,7 @@ void gostHash(HASH * hash, const unsigned char * message, size_t len) {
 
 
 void lastIteration(HASH * hash) {
-	printf("lastIteration\n");
+	printf("START LastIteration\n");
 	int shift = 32 - hash->message_block_size;
 
 	if (hash->message_block_size > 0) {
@@ -348,8 +324,8 @@ void lastIteration(HASH * hash) {
 
 
 	compressionFunction(hash->hash, hash->len);
+	printf("\n");
 	compressionFunction(hash->hash, hash->sum);
-
 
 	unsigned int t;
 	for(int i = 0, j = 0; i < 8; i++, j+= 4) {
@@ -359,5 +335,5 @@ void lastIteration(HASH * hash) {
 		hash->result[j+2] = (unsigned char)(t >> 8);
 		hash->result[j+3] = (unsigned char) t;
 	}
+	printf("END LastIteration\n");
 }
-

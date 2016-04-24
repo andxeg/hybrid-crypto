@@ -31,7 +31,7 @@ NTL::ZZ readHexNumber(fstream & inputFile) {
 			p = 16*p + hexNumber[c];
 	}
 
-	std::cout << p << std::endl;
+	//std::cout << p << std::endl;
 
 	return p;
 }
@@ -132,9 +132,6 @@ NTL::ZZ gostR3411(const NTL::ZZ & input) {
 }
 
 
-
-
-
 NTL::ZZ generateKEK(const NTL::ZZ & privateKey, const NTL::ZZ & publicKey, const NTL::ZZ & p) {
 	NTL::ZZ k = PowerMod(publicKey, privateKey, p);
 	NTL::ZZ kek = gostR3411(k);
@@ -199,15 +196,8 @@ int main(int argc, char * argv[] ) {
 	//SEND_MESSAGE_FROM_X_TO_Y
 	
 //!!!!	// NTL::ZZ kek = generateKEK(sender.first, recipient.second, p);
-	
-	std::cout << NTL::NumBits(sender.first) << std::endl;
 
-	NTL::ZZ tmp;
-	NTL::SetBit(tmp, 5);
-
-	std::cout <<  tmp << std::endl;
-
-	std::cout << "++++++++++++++" << std::endl;
+	std::cout << "HASH FUNCTION\n" << std::endl;
 	HASH hash;
 
 	
@@ -265,6 +255,7 @@ int main(int argc, char * argv[] ) {
 
 	gostHash(&hash, test_text4, 178);
 
+	printf("\n\nRESULTHASH:\n");
 	for (size_t i = 0; i < 32; i++) {
 		char l = (hash.result[i] & 0xf0) >> 4;
 		char r = hash.result[i] & 0x0f;
